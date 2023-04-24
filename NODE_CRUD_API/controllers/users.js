@@ -1,44 +1,84 @@
 import { v4 as uuidv4 } from "uuid";
+import dbConfig from "../config/database.js";
 
-let users = [];
+const con = dbConfig.connection;
 
 export const createUser = (req, res) => {
-    console.log("Post route reached");
-    console.log(req.body);
-    const user = req.body;
-  
-    const userWithId = { ...user, id: uuidv4() };
-    users.push(userWithId);
-  
+  const { firstName, lastName, age } = req.body;
+  const id = uuidv4();
+  const sql = `INSERT INTO users (id, firstName, lastName, age) VALUES (?, ?, ?, ?)`;
+  con.query(sql, [id, firstName, lastName, age], function (err, result) {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Internal server error");
+      return;
+    }
     res.send(
-      `User with  the name${user.firsName + user.lastName} added to the database!`
+      `User with the name ${firstName} ${lastName} added to the database!`
     );
-  }
-  export const getUsers = (req, res) => {
-    res.send(users);
-  }
+  });
+};
 
-  export const getUser =(req, res) => {
-    const { id } = req.params;
-    const foundUser = users.find((user) => user.id === id);
-    res.send(foundUser);
-  }
+export const getUsers = (req, res) => {
+  const sql = `SELECT * FROM users;`;
+  con.query(sql, function (err, result) {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Internal server error");
+      return;
+    }
+    res.send(result);
+  });
+};
 
-  export const deleteUser= (req, res) => {
-    const { id } = req.params;
-    users = users.filter((user) => user.id !== id);
-    res.send(`user with the id ${id} deleted from the database.`);
-  };
+export const getUser = (req, res) => {
+  const { id } = req.params;
+  const sql = "SELECT * FROM users WHERE id = ?";
+  con.query(sql, [id], function (err, result) {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Internal server error");
+      return;
+    }
+    if (result.length === 0) {
+      res.status(404).send("User not found");
+      return;
+    }
+    res.send(result[0]);
+  });
+};
 
-  export const updateUser = (req, res) => {
-    const { id } = req.params;
-    const { firsName, lastName, age } = req.body;
-    const userToBeUpadated = users.find((user) => user.id === id);
-    if (firsName) userToBeUpadated.firsName = firsName;
-  
-    if (lastName) userToBeUpadated.lastName = lastName;
-  
-    if (age) userToBeUpadated.age = age;
-  
-    res.send(`user with the id ${id} updated from the database.`);
-  };
+export const deleteUser = (req, res) => {
+  const { id } = req.params;
+  const sql = "DELETE FROM users WHERE id = ?";
+  con.query(sql, [id], function (err, result) {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Internal server error");
+      return;
+    }
+    if (result.affectedRows === 0) {
+      res.status(404).send("User not found");
+      return;
+    }
+    res.send(`User with the id ${id} deleted from the database.`);
+  });
+};
+
+export const updateUser = (req, res) => {
+  const { id } = req.params;
+  const { firstName, lastName, age } = req.body;
+  const sql = `UPDATE users SET firstName = ?, lastName = ?, age = ? WHERE id = ?`;
+  con.query(sql, [firstName, lastName, age, id], function (err, result) {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Internal server error");
+      return;
+    }
+    if (result.affectedRows === 0) {
+      res.status(404).send("User not found");
+      return;
+    }
+    res.send(`User with the id ${id} updated in the database.`);
+  });
+};

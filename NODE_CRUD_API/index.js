@@ -1,18 +1,27 @@
-import express   from "express";
+import express from "express";
+import bodyParser from "body-parser";
+import dbConfig from "./config/database.js";
+import usersRoutes from "./routes/users.js";
 
-import bodyParser from "body-parser"
-
-import usersRoutes from './routes/users.js'
 const app = express();
 const PORT = 5000;
 
-app.use(bodyParser.json());
-app.use('/users',usersRoutes);
+// Connect to the database
+const con = dbConfig.connection;
+dbConfig.connectDB();
 
-app.get('/',(req,res)=>{
-res.send('Hello From Home page')
+// Middleware
+app.use(bodyParser.json());
+
+// Routes
+app.use("/users", usersRoutes);
+
+// Default route
+app.get("/", (req, res) => {
+  res.send("Hello From Home page");
 });
 
-app.listen(PORT, ()=>
-    console.log(`Server running on port : http://localhost:${PORT})`)
-)
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server running on port: http://localhost:${PORT}`);
+});
